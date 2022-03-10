@@ -17,9 +17,15 @@
       let fns = [];
       let messageName = 'message';
 
-      function setTimeoutWPM(fn) {
+      function setTimeoutWPM(fn, timeout = -1) {
         fns.push(fn);
-        window.postMessage(messageName, '*');
+        if (timeout == -1) {
+          window.postMessage(messageName, '*');
+        } else {
+          setTimeout(() => {
+            window.postMessage(messageName, '*');
+          }, timeout);
+        }
       }
 
       function _handleMessage(event) {
@@ -46,7 +52,7 @@
         channel.port2.postMessage(messageName);
       }
 
-      channel.port1.onmessage = function(event) {
+      channel.port1.onmessage = function (event) {
         if (event.data == messageName) {
           event.stopPropagation();
           if (fns.length > 0) {
@@ -69,12 +75,13 @@
     }
 
     let test = getParamByName('test');
+    let timeout = getParamByName('timeout');
     if (test == 'setTimeout') {
       testSetTimeout();
     } else if (test == 'setInterval') {
       testSetInterval();
     } else if (test == 'setTimeoutWPM') {
-      testSetTimeoutWPM();
+      testSetTimeoutWPM(timeout);
     } else if (test == 'setTimeoutMPPM') {
       testSetTimeoutMPPM();
     } else if (test == 'requestIdleCallback') {
@@ -136,12 +143,12 @@
       }
     }
 
-    function testSetTimeoutWPM() {
+    function testSetTimeoutWPM(timeout = -1) {
       count = 0;
       printLine('=setTimeoutWPM Test=');
 
       startTime = performance.now();
-      setTimeoutWPM(_testSetTimeoutWPM, 0);
+      setTimeoutWPM(_testSetTimeoutWPM, timeout);
 
       function _testSetTimeoutWPM() {
         endTime = performance.now();
@@ -151,7 +158,7 @@
           return;
         }
         startTime = performance.now();
-        setTimeoutWPM(_testSetTimeoutWPM, 0);
+        setTimeoutWPM(_testSetTimeoutWPM, timeout);
       }
     }
 
