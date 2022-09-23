@@ -14,26 +14,26 @@
 
     // window.postMessage
     (function () {
+      const messageName = 'setTimeoutWPM';
       let fns = [];
-      let messageName = 'message';
+      let handledMessageCount = 0;
 
-      function setTimeoutWPM(fn, timeout = -1) {
+      function setTimeoutWPM(fn, timeout) {
         fns.push(fn);
-        if (timeout == -1) {
-          window.postMessage(messageName, '*');
-        } else {
-          setTimeout(() => {
-            window.postMessage(messageName, '*');
-          }, timeout);
-        }
+        setTimeout(() => {
+          window.postMessage({name: messageName, index: fns.length - 1} , '*');
+        }, timeout);
       }
 
       function _handleMessage(event) {
-        if (event.source == window && event.data == messageName) {
+        if (event.source == window && event.data.name == messageName) {
           event.stopPropagation();
-          if (fns.length > 0) {
-            let fn = fns.shift();
-            fn();
+          const fn = fns[event.data.index];
+          fn();
+          handledMessageCount++;
+          if (handledMessageCount === fns.length) {
+            fns = [];
+            handledMessageCount = 0;
           }
         }
       }
@@ -44,20 +44,27 @@
     // MessagePort.postMessage
     (function () {
       let fns = [];
+      let handledMessageCount = 0;
       let messageName = 'message';
       let channel = new MessageChannel();
 
-      function setTimeoutMPPM(fn) {
+      function setTimeoutMPPM(fn, timeout) {
         fns.push(fn);
-        channel.port2.postMessage(messageName);
+        setTimeout(() => {
+          channel.port2.postMessage({name: messageName, index: fns.length - 1});
+        }, timeout);
       }
 
       channel.port1.onmessage = function (event) {
-        if (event.data == messageName) {
+        if (event.data.name == messageName) {
           event.stopPropagation();
-          if (fns.length > 0) {
-            let fn = fns.shift();
-            fn();
+
+          const fn = fns[event.data.index];
+          fn();
+          handledMessageCount++;
+          if (handledMessageCount === fns.length) {
+            fns = [];
+            handledMessageCount = 0;
           }
         }
       }
